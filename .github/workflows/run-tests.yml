@@ -21,7 +21,7 @@ jobs:
       with:
         command: |
           disp('Running my task'); 
-          score = processSolver("${{ github.event.client_payload.actor }}", "${{ github.event.client_payload.sha }}");
+          # score = processSolver("${{ github.event.client_payload.actor }}", "${{ github.event.client_payload.sha }}");
           # fid = fopen('result.txt', 'wt');
           # fprintf(fid, 'Score: %d\n', score);
           # fclose(fid);
