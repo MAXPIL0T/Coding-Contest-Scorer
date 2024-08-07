@@ -21,7 +21,7 @@ jobs:
         cd temp_repo1
         git fetch origin pull/${{ github.event.client_payload.pr_number }}/head:pr_branch
         git checkout pr_branch
-        cp solver.m ../solver.m
+        cp soln.m ../soln.m
         cd ..
         rm -rf temp_repo1
 
@@ -29,8 +29,8 @@ jobs:
       run: |
         git config --global user.email "github-actions@github.com"
         git config --global user.name "GitHub Actions"
-        git add solver.m
-        git commit -m "Update solver.m from repo1 PR"
+        git add soln.m
+        git commit -m "Update soln.m from repo1 PR"
         git push
 
     - name: Run custom testing procedure
