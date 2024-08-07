@@ -12,12 +12,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # - name: Set up JDK 11
-    #   uses: actions/setup-java@v4
-    #   with:
-    #     java-version: '21'
-    #     distribution: 'microsoft'
-
     - name: Fetch solver.m from repo1 pull request
       run: |
         git clone https://github.com/MAXPIL0T/Coding-Contest.git temp_repo1
@@ -38,14 +32,80 @@ jobs:
           disp('Running my task'); 
           processSolver("${{ github.event.client_payload.actor }}", "${{ github.event.client_payload.sha }}");
 
-    - name: Commit and push changes
+    - name: Get test score
+      id: get-score
       run: |
-        date > last-run.txt
-        git config user.name github-actions
-        git config user.email github-actions@github.com
-        git add .
-        git commit -m "generated"
+        current_score=$(awk -F, -v hash="${{ github.event.client_payload.sha }}" '$1 == hash {print $2}' scores.csv)
+        echo "::set-output name=score::$current_score"
+
+    - name: Checkout repo1 to update scores
+      uses: actions/checkout@v4
+      with:
+        repository: MAXPIL0T/Coding-Contest
+        token: ${{ secrets.GH_TOKEN }}
+        path: repo1
+
+    - name: Update score in repo1
+      run: |
+        cd repo1
+        echo "${{ github.event.client_payload.sha }},${{ steps.get-score.outputs.score }}" >> scores.csv
+        git config --global user.email "github-actions@github.com"
+        git config --global user.name "GitHub Actions"
+        git add scores.csv
+        git commit -m "Update scores"
         git push
+
+    - name: Check if the score is higher
+      id: check-score
+      run: |
+        current_score=${{ steps.get-score.outputs.score }}
+        highest_score=true
+        while IFS=, read -r hash score
+        do
+          if [[ "$score" -gt "$current_score" && "$hash" != "${{ github.event.client_payload.sha }}" ]]; then
+            highest_score=false
+            break
+          fi
+        done < repo1/scores.csv
+        echo "Is highest: $highest_score"
+        echo "::set-output name=accept_pr::$highest_score"
+
+    - name: Comment on PR with score
+      run: |
+        curl -X POST -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/MAXPIL0T/Coding-Contest/issues/${{ github.event.client_payload.pr_number }}/comments \
+          -d '{"body":"The score for this pull request is ${{ steps.get-score.outputs.score }}."}'
+
+    - name: Accept or reject PR
+      if: steps.check-score.outputs.accept_pr == 'true'
+      run: |
+        curl -X PUT -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/MAXPIL0T/Coding-Contest/pulls/${{ github.event.client_payload.pr_number }}/merge \
+          -d '{"commit_title":"Merging PR as new score is higher"}'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # - name: Commit and push changes
+    #   run: |
+    #     date > last-run.txt
+    #     git config user.name github-actions
+    #     git config user.email github-actions@github.com
+    #     git add .
+    #     git commit -m "generated"
+    #     git push
 
     # - name: Get test score
     #   id: get-score
