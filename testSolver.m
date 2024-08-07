@@ -12,7 +12,7 @@ function [result,computeTime] = testSolver()
         x = tests(i).x;
         lim = tests(i).lim;
 
-        ix = solver(x,lim);
+        ix = soln(x,lim);
 
         % VALIDATE RESULTS
         % How close did the solution get to the limit?
