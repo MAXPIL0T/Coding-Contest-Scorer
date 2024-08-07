@@ -1,4 +1,4 @@
-function processSolver(commitActor,commitHash)
+function [score, highestScore] = processSolver(commitActor,commitHash)
 
     t = datetime("now");
     [result,computeTime] = testSolver();
@@ -13,7 +13,12 @@ function processSolver(commitActor,commitHash)
     ttAll = [ttAll; tt];
     writetimetable(ttAll,"allSolvers.csv")
 
+    data = readtable("allSolvers.csv");
+    scores = data.score;
+    scores(strcmp(scores, 'Inf') | strcmp(scores, 'NA')) = {NaN};
+    scores = cellfun(@str2double, scores);
+    highestScore = max(scores, [], 'omitnan');
+
     matlab.internal.liveeditor.executeAndSave('report.mlx')
     export("report.mlx","report.md")
-
 end

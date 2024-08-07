@@ -30,60 +30,37 @@ jobs:
       with:
         command: |
           disp('Running my task'); 
-          processSolver("${{ github.event.client_payload.actor }}", "${{ github.event.client_payload.sha }}");
+          [score, highestScore] = processSolver("${{ github.event.client_payload.actor }}", "${{ github.event.client_payload.sha }}");
+          fid = fopen('score.txt', 'wt');
+          fprintf(fid, score);
+          fclose(fid);
+          fid = fopen('highestScore.txt', 'wt');
+          fprintf(fid, highestScore);
+          fclose(fid);
 
-    - name: Get test score
-      id: get-score
-      shell: pwsh
+    - name: Commit and push changes
       run: |
-        $current_score = (Import-Csv -Path allSolvers.csv | Where-Object { $_.hash -eq '${{ github.event.client_payload.sha }}' }).score
-        Write-Output "::set-output name=score::$current_score"
-
-    - name: Checkout repo1 to update scores
-      uses: actions/checkout@v4
-      with:
-        repository: MAXPIL0T/Coding-Contest
-        token: ${{ secrets.GH_TOKEN }}
-        path: repo1
-
-    - name: Update score in repo1
-      run: |
-        cd repo1
-        echo "${{ github.event.client_payload.sha }},${{ steps.get-score.outputs.score }}" >> allSolvers.csv
-        git config --global user.email "github-actions@github.com"
-        git config --global user.name "GitHub Actions"
-        git add allSolvers.csv
-        git commit -m "Update scores"
+        date > last-run.txt
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add .
+        git commit -m "generated"
         git push
 
-    - name: Check if the score is higher
-      id: check-score
-      shell: pwsh
-      run: |
-        $current_score = [int]${{ steps.get-score.outputs.score }}
-        $highest_score = $true
-        Import-Csv -Path repo1/allSolvers.csv | ForEach-Object {
-          if ($_.score -gt $current_score -and $_.hash -ne '${{ github.event.client_payload.sha }}') {
-            $highest_score = $false
-          }
-        }
-        Write-Output "Is highest: $highest_score"
-        Write-Output "::set-output name=accept_pr::$highest_score"
+    # - name: Comment on PR with score
+    #   run: |
+    #     curl -X POST -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+    #       -H "Accept: application/vnd.github.v3+json" \
+    #       https://api.github.com/repos/MAXPIL0T/Coding-Contest/issues/${{ github.event.client_payload.pr_number }}/comments \
+    #       -d '{"body":"The score for this pull request is ${{ steps.get-score.outputs.score }}."}'
 
-    - name: Comment on PR with score
-      run: |
-        curl -X POST -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          https://api.github.com/repos/MAXPIL0T/Coding-Contest/issues/${{ github.event.client_payload.pr_number }}/comments \
-          -d '{"body":"The score for this pull request is ${{ steps.get-score.outputs.score }}."}'
-
-    - name: Accept or reject PR
-      if: steps.check-score.outputs.accept_pr == 'true'
-      run: |
-        curl -X PUT -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          https://api.github.com/repos/MAXPIL0T/Coding-Contest/pulls/${{ github.event.client_payload.pr_number }}/merge \
-          -d '{"commit_title":"Merging PR as new score is higher"}'
+    # - name: Accept or reject PR
+    #   if: steps.check-score.outputs.accept_pr == 'true'
+    #   run: |
+    #     curl -X PUT -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+    #       -H "Accept: application/vnd.github.v3+json" \
+    #       https://api.github.com/repos/MAXPIL0T/Coding-Contest/pulls/${{ github.event.client_payload.pr_number }}/merge \
+    #       -d '{"commit_title":"Merging PR as new score is higher"}'
 
 
 
