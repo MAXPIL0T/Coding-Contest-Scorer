@@ -34,9 +34,10 @@ jobs:
 
     - name: Get test score
       id: get-score
+      shell: pwsh
       run: |
-        current_score=$(awk -F, -v hash="${{ github.event.client_payload.sha }}" '$1 == hash {print $2}' scores.csv)
-        echo "::set-output name=score::$current_score"
+        $current_score = (Import-Csv -Path scores.csv | Where-Object { $_.hash -eq '${{ github.event.client_payload.sha }}' }).score
+        Write-Output "::set-output name=score::$current_score"
 
     - name: Checkout repo1 to update scores
       uses: actions/checkout@v4
@@ -57,18 +58,17 @@ jobs:
 
     - name: Check if the score is higher
       id: check-score
+      shell: pwsh
       run: |
-        current_score=${{ steps.get-score.outputs.score }}
-        highest_score=true
-        while IFS=, read -r hash score
-        do
-          if [[ "$score" -gt "$current_score" && "$hash" != "${{ github.event.client_payload.sha }}" ]]; then
-            highest_score=false
-            break
-          fi
-        done < repo1/scores.csv
-        echo "Is highest: $highest_score"
-        echo "::set-output name=accept_pr::$highest_score"
+        $current_score = [int]${{ steps.get-score.outputs.score }}
+        $highest_score = $true
+        Import-Csv -Path repo1/scores.csv | ForEach-Object {
+          if ($_.score -gt $current_score -and $_.hash -ne '${{ github.event.client_payload.sha }}') {
+            $highest_score = $false
+          }
+        }
+        Write-Output "Is highest: $highest_score"
+        Write-Output "::set-output name=accept_pr::$highest_score"
 
     - name: Comment on PR with score
       run: |
