@@ -30,68 +30,68 @@ jobs:
       with:
         command: |
           disp('Running my task'); 
-          [score, highestScore] = processSolver("${{ github.event.client_payload.actor }}", "${{ github.event.client_payload.sha }}");
-          fid = fopen('score.txt', 'wt');
-          fprintf(fid, score);
-          fclose(fid);
-          fid = fopen('highest.txt', 'wt');
-          fprintf(fid, highestScore);
-          fclose(fid);
+          processSolver("${{ github.event.client_payload.actor }}", "${{ github.event.client_payload.sha }}");
+          % fid = fopen('score.txt', 'wt');
+          % fprintf(fid, score);
+          % fclose(fid);
+          % fid = fopen('highest.txt', 'wt');
+          % fprintf(fid, highestScore);
+          % fclose(fid);
 
-    - name: Get scores
-      id: get-scores
-      shell: pwsh
-      run: |
-        $highest_score = Get-Content highest.txt
-        $current_score = Get-Content score.txt
-        Write-Output "::set-output name=highest_score::$highest_score"
-        Write-Output "::set-output name=current_score::$current_score"
-
-    - name: Check if the score is higher
-      id: check-score
-      shell: pwsh
-      run: |
-        $highest_score = [int]${{ steps.get-scores.outputs.highest_score }}
-        $current_score = [int]${{ steps.get-scores.outputs.current_score }}
-        if ($current_score -gt $highest_score) {
-          Write-Output "Is highest: true"
-          Write-Output "::set-output name=accept_pr::true"
-        } else {
-          Write-Output "Is highest: false"
-          Write-Output "::set-output name=accept_pr::false"
-        }
-    
-    - name: Comment on PR with score
-      shell: pwsh
-      run: |
-        $body = "The score for this pull request is ${{ steps.get-scores.outputs.current_score }}."
-        $pr_number = ${{ github.event.client_payload.pr_number }}
-        $token = ${{ secrets.GITHUB_TOKEN }}
-        $repo = 'MAXPIL0T/Coding-Contest'
-        $url = "https://api.github.com/repos/$repo/issues/$pr_number/comments"
-        Invoke-RestMethod -Method Post -Uri $url -Headers @{ Authorization = "token $token" } -Body (@{ body = $body } | ConvertTo-Json)
-
-    - name: Accept or reject PR
-      if: steps.check-score.outputs.accept_pr == 'true'
-      shell: pwsh
-      run: |
-        $pr_number = ${{ github.event.client_payload.pr_number }}
-        $token = ${{ secrets.GITHUB_TOKEN }}
-        $repo = 'MAXPIL0T/Coding-Contest'
-        $url = "https://api.github.com/repos/$repo/pulls/$pr_number/merge"
-        $body = @{ commit_title = "Merging PR as new score is higher" } | ConvertTo-Json
-        Invoke-RestMethod -Method Put -Uri $url -Headers @{ Authorization = "token $token"; Accept = "application/vnd.github.v3+json" } -Body $body
-
-
-
-    # - name: Commit and push changes
+    # - name: Get scores
+    #   id: get-scores
+    #   shell: pwsh
     #   run: |
-    #     date > last-run.txt
-    #     git config user.name github-actions
-    #     git config user.email github-actions@github.com
-    #     git add .
-    #     git commit -m "generated"
-    #     git push
+    #     $highest_score = Get-Content highest.txt
+    #     $current_score = Get-Content score.txt
+    #     Write-Output "::set-output name=highest_score::$highest_score"
+    #     Write-Output "::set-output name=current_score::$current_score"
+
+    # - name: Check if the score is higher
+    #   id: check-score
+    #   shell: pwsh
+    #   run: |
+    #     $highest_score = [int]${{ steps.get-scores.outputs.highest_score }}
+    #     $current_score = [int]${{ steps.get-scores.outputs.current_score }}
+    #     if ($current_score -gt $highest_score) {
+    #       Write-Output "Is highest: true"
+    #       Write-Output "::set-output name=accept_pr::true"
+    #     } else {
+    #       Write-Output "Is highest: false"
+    #       Write-Output "::set-output name=accept_pr::false"
+    #     }
+    
+    # - name: Comment on PR with score
+    #   shell: pwsh
+    #   run: |
+    #     $body = "The score for this pull request is ${{ steps.get-scores.outputs.current_score }}."
+    #     $pr_number = ${{ github.event.client_payload.pr_number }}
+    #     $token = ${{ secrets.GITHUB_TOKEN }}
+    #     $repo = 'MAXPIL0T/Coding-Contest'
+    #     $url = "https://api.github.com/repos/$repo/issues/$pr_number/comments"
+    #     Invoke-RestMethod -Method Post -Uri $url -Headers @{ Authorization = "token $token" } -Body (@{ body = $body } | ConvertTo-Json)
+
+    # - name: Accept or reject PR
+    #   if: steps.check-score.outputs.accept_pr == 'true'
+    #   shell: pwsh
+    #   run: |
+    #     $pr_number = ${{ github.event.client_payload.pr_number }}
+    #     $token = ${{ secrets.GITHUB_TOKEN }}
+    #     $repo = 'MAXPIL0T/Coding-Contest'
+    #     $url = "https://api.github.com/repos/$repo/pulls/$pr_number/merge"
+    #     $body = @{ commit_title = "Merging PR as new score is higher" } | ConvertTo-Json
+    #     Invoke-RestMethod -Method Put -Uri $url -Headers @{ Authorization = "token $token"; Accept = "application/vnd.github.v3+json" } -Body $body
+
+
+
+    - name: Commit and push changes
+      run: |
+        date > last-run.txt
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add .
+        git commit -m "generated"
+        git push
 
     # - name: Comment on PR with score
     #   run: |
