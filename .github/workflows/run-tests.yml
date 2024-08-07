@@ -36,7 +36,7 @@ jobs:
       id: get-score
       shell: pwsh
       run: |
-        $current_score = (Import-Csv -Path scores.csv | Where-Object { $_.hash -eq '${{ github.event.client_payload.sha }}' }).score
+        $current_score = (Import-Csv -Path allSolvers.csv | Where-Object { $_.hash -eq '${{ github.event.client_payload.sha }}' }).score
         Write-Output "::set-output name=score::$current_score"
 
     - name: Checkout repo1 to update scores
@@ -49,10 +49,10 @@ jobs:
     - name: Update score in repo1
       run: |
         cd repo1
-        echo "${{ github.event.client_payload.sha }},${{ steps.get-score.outputs.score }}" >> scores.csv
+        echo "${{ github.event.client_payload.sha }},${{ steps.get-score.outputs.score }}" >> allSolvers.csv
         git config --global user.email "github-actions@github.com"
         git config --global user.name "GitHub Actions"
-        git add scores.csv
+        git add allSolvers.csv
         git commit -m "Update scores"
         git push
 
@@ -62,7 +62,7 @@ jobs:
       run: |
         $current_score = [int]${{ steps.get-score.outputs.score }}
         $highest_score = $true
-        Import-Csv -Path repo1/scores.csv | ForEach-Object {
+        Import-Csv -Path repo1/allSolvers.csv | ForEach-Object {
           if ($_.score -gt $current_score -and $_.hash -ne '${{ github.event.client_payload.sha }}') {
             $highest_score = $false
           }
