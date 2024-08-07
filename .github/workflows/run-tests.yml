@@ -27,14 +27,6 @@ jobs:
         cp soln.m ../soln.m
         cd ..
 
-    # - name: Commit solver.m to repo2
-    #   run: |
-    #     git config --global user.email "github-actions@github.com"
-    #     git config --global user.name "GitHub Actions"
-    #     git add soln.m
-    #     git commit -m "Update soln.m from repo1 PR"
-    #     git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/MAXPIL0T/Coding-Contest-Scorer.git HEAD:main
-
     - name: Set up MATLAB
       uses: matlab-actions/setup-matlab@v2
 
