@@ -26,8 +26,6 @@ jobs:
         git checkout pr_branch
         cp soln.m ../soln.m
         cd ..
-        % rm -rf temp_repo1
-        % echo "$(<soln.m )"
 
     # - name: Commit solver.m to repo2
     #   run: |
