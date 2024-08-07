@@ -15,6 +15,24 @@ jobs:
     - name: Set up MATLAB
       uses: matlab-actions/setup-matlab@v2
 
+    - name: Fetch solver.m from repo1 pull request
+      run: |
+        git clone https://github.com/MAXPIL0T/Coding-Contest.git temp_repo1
+        cd temp_repo1
+        git fetch origin pull/${{ github.event.client_payload.pr_number }}/head:pr_branch
+        git checkout pr_branch
+        cp solver.m ../solver.m
+        cd ..
+        rm -rf temp_repo1
+
+    - name: Commit solver.m to repo2
+      run: |
+        git config --global user.email "github-actions@github.com"
+        git config --global user.name "GitHub Actions"
+        git add solver.m
+        git commit -m "Update solver.m from repo1 PR"
+        git push
+
     - name: Run custom testing procedure
       id: run-tests
       uses: matlab-actions/run-command@v2
